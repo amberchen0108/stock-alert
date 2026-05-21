@@ -1,0 +1,32 @@
+name: stock-alert
+
+on:
+  schedule:
+    - cron: '0 1 * * 1-5'   # 09:00 台灣時間
+    - cron: '0 2 * * 1-5'   # 10:00
+    - cron: '0 3 * * 1-5'   # 11:00
+    - cron: '0 4 * * 1-5'   # 12:00
+    - cron: '0 5 * * 1-5'   # 13:00
+    - cron: '30 5 * * 1-5'  # 13:30
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: install packages
+        run: pip install playwright requests
+
+      - name: install browsers
+        run: python -m playwright install chromium
+
+      - name: run script
+        run: python main.py
