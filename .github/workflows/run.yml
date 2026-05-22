@@ -1,15 +1,12 @@
 name: stock-alert
 
 on:
+  # 手動執行
   workflow_dispatch:
 
+  # 每 5 分鐘測試一次（避開整點）
   schedule:
     - cron: '2-59/5 * * * *'
-    - cron: '0 2 * * 1-5'
-    - cron: '0 3 * * 1-5'
-    - cron: '0 4 * * 1-5'
-    - cron: '0 5 * * 1-5'
-    - cron: '30 5 * * 1-5'
 
 jobs:
   run-script:
@@ -18,22 +15,27 @@ jobs:
 
     steps:
 
+      # 下載 repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 安裝 Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
+      # 安裝套件
       - name: Install packages
         run: |
           pip install playwright
           pip install requests
 
+      # 安裝 Chromium
       - name: Install Chromium
         run: python -m playwright install chromium
 
+      # 執行程式
       - name: Run script
         env:
           BARK_KEY: ${{ secrets.BARK_KEY }}
