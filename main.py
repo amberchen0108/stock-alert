@@ -1,51 +1,90 @@
 from playwright.sync_api import sync_playwright
 import requests
 from datetime import datetime
+import os
+import re
 
-BARK_KEY = "wbYsBbEhsHXTktBCNUVcjT"
+# =========================
+# Bark 設定（從 GitHub Secret 讀取）
+# =========================
+BARK_KEY = os.environ["BARK_KEY"]
 BARK_URL = f"https://api.day.app/{BARK_KEY}"
 
+# =========================
+# 網站
+# =========================
 URL = "https://www.futures-ai.com/stock-price-change-distribution"
 
+# =========================
+# Playwright 抓資料
+# =========================
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
+
     page = browser.new_page()
 
     page.goto(URL)
+
+    # 等待頁面載入
     page.wait_for_timeout(5000)
 
-    # 👉 重點：直接抓「畫面文字」
+    # 抓畫面文字
     text = page.inner_text("body")
 
     browser.close()
 
-# 👉 只抓三個最關鍵數字（跌 / 平 / 漲）
-import re
-
+# =========================
+# 找百分比
+# =========================
 matches = re.findall(r'(\d+)%', text)
 
-print("全部數字：", matches[:10])
+print("原始抓取：", matches[:20])
 
-# 🔥 找「最可能的三個值」：跌 / 平 / 漲通常是 3 個連續
+down = None
+flat = None
+up = None
+
+# 找加總 = 100 的三個數字
 for i in range(len(matches) - 2):
-    down = int(matches[i])
-    flat = int(matches[i+1])
-    up = int(matches[i+2])
 
-    # 🎯 合理範圍判斷（避免亂抓）
-    if down + flat + up == 100:
+    a = int(matches[i])
+    b = int(matches[i + 1])
+    c = int(matches[i + 2])
+
+    if a + b + c == 100:
+        down = a
+        flat = b
+        up = c
         break
 
+# 如果沒找到（保底）
+if down is None:
+    down = int(matches[0])
+    flat = int(matches[1])
+    up = int(matches[2])
+
+# =========================
+# 日期時間
+# =========================
 now = datetime.now()
 
-body = f"""日期:{now.strftime('%m/%d')}
-時間:{now.strftime('%H:%M')}
+date_text = now.strftime("%m/%d")
+time_text = now.strftime("%H:%M")
+
+# =========================
+# 推播內容
+# =========================
+body = f"""日期:{date_text}
+時間:{time_text}
 
 跌家 {down}%
 持平 {flat}%
 漲家 {up}%"""
 
-requests.post(
+# =========================
+# 發送 Bark
+# =========================
+response = requests.post(
     BARK_URL,
     json={
         "title": "台股漲跌分布",
@@ -53,8 +92,13 @@ requests.post(
     }
 )
 
-# 🚨 警報
+print(response.text)
+
+# =========================
+# 恐慌警報
+# =========================
 if down >= 70:
+
     requests.post(
         BARK_URL,
         json={
@@ -62,3 +106,5 @@ if down >= 70:
             "body": "!!注意，跌家已達70%!!"
         }
     )
+
+    print("已發送恐慌警報")
