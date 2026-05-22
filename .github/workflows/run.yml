@@ -1,32 +1,40 @@
 name: stock-alert
 
 on:
+  workflow_dispatch:
+
   schedule:
-    - cron: '0 1 * * 1-5'   # 台灣 09:00
-    - cron: '0 2 * * 1-5'   # 10:00
-    - cron: '0 3 * * 1-5'   # 11:00
-    - cron: '0 4 * * 1-5'   # 12:00
-    - cron: '0 5 * * 1-5'   # 13:00
-    - cron: '30 5 * * 1-5'  # 13:30
+    - cron: '0 1 * * 1-5'
+    - cron: '0 2 * * 1-5'
+    - cron: '0 3 * * 1-5'
+    - cron: '0 4 * * 1-5'
+    - cron: '0 5 * * 1-5'
+    - cron: '30 5 * * 1-5'
 
 jobs:
   run-script:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout
+
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: setup python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: install packages
-        run: pip install playwright requests
+      - name: Install packages
+        run: |
+          pip install playwright
+          pip install requests
 
-      - name: install browsers
+      - name: Install Chromium
         run: python -m playwright install chromium
 
-      - name: run script
+      - name: Run script
+        env:
+          BARK_KEY: ${{ secrets.BARK_KEY }}
         run: python main.py
