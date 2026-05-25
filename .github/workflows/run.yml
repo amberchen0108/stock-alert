@@ -36,7 +36,7 @@ jobs:
 
       - name: Run script
 
-      # wake up
         env:
           BARK_KEY: ${{ secrets.BARK_KEY }}
         run: python main.py
+      # wake up
