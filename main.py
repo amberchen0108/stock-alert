@@ -75,7 +75,7 @@ body = f"""日期:{now.strftime('%m/%d')}
 requests.post(
     BARK_URL,
     json={
-        "title": "台股漲跌分布",
+        "title": "台股漲跌分布(Github)",
         "body": body
     }
 )
